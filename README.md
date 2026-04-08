@@ -1,285 +1,683 @@
-# Socket.IO Chat App — A Beginner's Guide to Real-Time Communication
+# Socket.IO Chat App: Beginner Guide from Local Development to Docker and GitHub Actions
 
-Welcome! This project is a **real-time chat application** built with Node.js, Express, and Socket.IO. It is designed to teach you the **foundations of socket-based communication** — the same technology behind live notifications, multiplayer games, and collaborative tools.
+Welcome! This project is a real-time chat application built with Node.js, Express, and Socket.IO. It started as a beginner exercise for learning socket-based communication, and it now also includes Docker support and a GitHub Actions workflow that can automatically push an updated Docker image to Docker Hub whenever new commits are pushed to the `main` branch.
 
-### What Are "Sockets" In Plain English?
+This README is written for a pure beginner. It starts with the app itself, then shows you how to run it locally, then explains how Docker packages it, and finally explains how GitHub Actions automates the Docker publishing process.
 
-Normally, when you visit a website, your browser sends **one request** and the server sends **one response**. After that, the conversation is over. If the page needs new data, the browser has to ask again (think of refreshing a news feed).
+## Current Deployment Setup
 
-**Sockets change that.** With Socket.IO, your browser and the server open a **persistent, two-way connection**. Once connected, either side can send small packets of data — called **events** — at any time, without the user having to refresh the page. That is what makes chat messages appear instantly.
+- App port inside the project: `3000`
+- Docker image name: `organisedtoast/socket-chat-app:latest`
+- Docker workflow file: `.github/workflows/cicd.yml`
+- Workflow trigger: push to `main`
+- GitHub repository secrets used by the workflow: `DOCKER_HUB_USERNAME` and `DOCKER_HUB_ACCESS_TOKEN`
 
----
+**What this means:** this repository is no longer just a local Node.js app. It now has a documented Docker setup and a basic CI/CD pipeline.
 
-## What This App Does
+**Why this matters:** a beginner can learn three layers in one project:
+
+1. How a real-time chat app works
+2. How to package that app into a Docker image
+3. How to automate image publishing with GitHub Actions
+
+## Project Overview
+
+This app lets multiple browser tabs connect to the same server and exchange messages in real time. Unlike a traditional web page, where the browser asks for data and then waits for another refresh, this app keeps a live connection open between the browser and the server so events can flow instantly in both directions.
+
+The project now supports four different ways to think about running it:
+
+1. Local Node.js development with `npm`
+2. Local Docker development with `docker build` and `docker run`
+3. Sharing the app through Docker Hub as a public image
+4. Automatically updating that Docker Hub image through GitHub Actions
+
+## What the Chat App Does
 
 When you run this app you get a fully functional chat with:
 
-- **Live chat messages** — messages typed in one browser tab appear instantly in every other connected tab.
-- **Nickname selection** — a prompt asks for your name when the page loads. If you skip it, you become `Anonymous`.
-- **Join / leave / rename notifications** — the server broadcasts system messages like *"Alice joined the chat"* or *"Bob is now known as Charlie"*.
-- **Typing indicator** — when someone is typing, other users see a brief status line like *"Alice is typing..."*.
-- **Online users sidebar** — a live list of everyone currently connected, updated in real time.
+- Live chat messages that appear instantly in every connected tab
+- Nickname selection when the page loads
+- Join, leave, and rename notifications
+- A typing indicator for other connected users
+- A live online users sidebar
 
----
+**Beginner tip:** open at least two browser tabs to the app so you can actually see the real-time behavior. With only one tab open, the app is running, but many of the "live" features are harder to notice.
 
-## How To Start The App
+## How to Run This Project
 
-### Step 1 — Open your terminal
+Here is the learning ladder for this repository, from simplest to most advanced:
 
-Open a terminal (Command Prompt, PowerShell, or any terminal you prefer).
+1. Run it locally with Node.js
+2. Build and run it locally with Docker
+3. Pull and run the Docker Hub image
+4. Push code to GitHub and let GitHub Actions update Docker Hub automatically
 
-### Step 2 — Navigate to the project folder
+If you are brand new, start with the local Node.js method first. Once that works, move to Docker. Once Docker makes sense, GitHub Actions will feel much easier.
 
-```
-cd institute-of-data-labs/module9/exercise5
-```
+## Run Locally with Node.js
 
-### Step 3 — Install dependencies
+### Before You Start
 
-```
+Make sure you have Node.js installed on your computer. This project uses Node.js to run the server, and `npm` comes with Node.js.
+
+### Step 1: Open the project root in a terminal
+
+Open PowerShell, Command Prompt, or your preferred terminal, and navigate into the project folder. The correct folder is the one that contains:
+
+- `package.json`
+- `index.js`
+- `public/`
+- `Dockerfile`
+- `README.md`
+
+If your terminal is already opened inside this folder, you are ready for the next step.
+
+### Step 2: Install dependencies
+
+Run:
+
+```powershell
 npm install
 ```
 
-This downloads the packages the app needs: **Express**, **Socket.IO**, and **nodemon**. They are listed in `package.json` and saved into a `node_modules/` folder.
+This downloads the packages listed in `package.json`, including:
 
-### Step 4 — Start the server
+- `express`
+- `socket.io`
+- `nodemon`
 
-You have two options:
+**What this means:** your source code uses these packages, but the packages are not stored directly in the repository. `npm install` downloads them into `node_modules/`.
 
-**Option A — Development mode (recommended while learning):**
+**Common mistake:** if you skip this step, the app will fail with errors such as "Cannot find module 'express'".
 
-```
+### Step 3: Start the server
+
+For beginner-friendly development, run:
+
+```powershell
 npm run dev
 ```
 
-This runs the app with **nodemon**. Nodemon watches your files and **automatically restarts the server** whenever you save a change. This saves you from manually stopping and restarting the server every time you edit a file.
+This uses `nodemon`, which automatically restarts the server when you save a file.
 
-**Option B — Normal run mode:**
+You can also run the normal start script:
 
-```
+```powershell
 npm start
 ```
 
-This runs the app with plain **node**. It works exactly the same, but it will **not** restart automatically if you change a file. You would need to stop it (`Ctrl + C`) and run `npm start` again to pick up changes.
+That starts the app without automatic restarts.
 
-### Step 5 — Open your browser
+### Step 4: Open the app in your browser
 
 Visit:
 
-```
+```text
 http://localhost:3000
 ```
 
-You will see a prompt asking for your nickname. Enter one (or press OK to stay `Anonymous`), and you are in the chat!
+The browser will prompt you for a nickname. Enter one, or leave it blank to become `Anonymous`.
 
-### Step 6 — Test with multiple tabs
+### Step 5: Test the real-time features
 
-To see real-time updates, open **a second browser tab** (or a different browser) and go to `http://localhost:3000` again. Type a message in one tab and watch it appear in the other instantly.
+Open a second tab to the same address:
 
----
+```text
+http://localhost:3000
+```
+
+Now send a message in one tab and watch it appear in the other.
+
+**Why this matters:** this is the simplest proof that Socket.IO is working. The app is not waiting for a page refresh. The message is pushed to connected clients immediately.
 
 ## Project Structure
 
+Here is the current structure of the project:
+
+```text
+institute-of-data-labs-module10/
+|-- .github/
+|   |-- workflows/
+|       |-- cicd.yml
+|-- public/
+|   |-- client.js
+|   |-- index.html
+|   |-- style.css
+|-- .dockerignore
+|-- .gitignore
+|-- Dockerfile
+|-- README.md
+|-- index.js
+|-- package-lock.json
+|-- package.json
 ```
-exercise5/
-├── index.js              ← Server-side code (runs in Node.js)
-├── package.json          ← Lists dependencies and available scripts
-├── package-lock.json     ← Exact versions of every installed dependency
-└── public/               ← All browser files (served to the user)
-    ├── index.html        ← The page you see in the browser
-    ├── client.js         ← Browser-side JavaScript (handles Socket.IO on the client)
-    └── style.css         ← Styling for the chat layout
+
+What each important file does:
+
+- `index.js` runs the Node.js server
+- `public/client.js` runs in the browser
+- `public/index.html` is the page structure
+- `public/style.css` styles the chat UI
+- `Dockerfile` explains how Docker should build the app image
+- `.dockerignore` tells Docker what not to copy into the image
+- `.github/workflows/cicd.yml` defines the GitHub Actions workflow
+- `package.json` defines scripts and dependencies
+
+## How the App Works
+
+### What Are "Sockets" in Plain English?
+
+Normally, a browser sends one request and the server sends one response. After that, the conversation is finished. If the page needs new data, the browser has to ask again.
+
+Sockets change that model. Instead of opening and closing the conversation every time, the browser and server keep one live connection open. Either side can send named events whenever it needs to.
+
+**Big idea:** a socket is more like a phone call than a letter. Once the connection is open, both sides can talk at any time.
+
+### Client and Server Roles
+
+- The server is the Node.js process running `index.js`
+- The client is the browser running `public/client.js`
+- Socket.IO provides the live channel between them
+
+The browser never talks directly to another browser. Every event flows through the server first.
+
+### Step-by-Step Walkthrough
+
+Here is what happens when the app runs:
+
+1. You start the server with `npm run dev` or `npm start`
+2. Node.js runs `index.js`
+3. Express serves the files in `public/`
+4. The browser loads `index.html`, `style.css`, and `client.js`
+5. The browser also loads the Socket.IO client library from `/socket.io/socket.io.js`
+6. `io()` is called in `client.js`, creating a live connection to the server
+7. The server detects the connection in `io.on('connection', ...)`
+8. The browser sends the chosen nickname to the server
+9. The server stores the nickname and updates the online users list
+10. When a user sends a message, the server broadcasts it to all connected clients
+
+**What this means:** the server is the central traffic controller. It receives events, updates state, and decides what every connected browser should receive.
+
+### Key Features in the Code
+
+#### Server setup in `index.js`
+
+- `express()` creates the web app
+- `http.createServer(app)` creates the HTTP server
+- `new Server(server)` attaches Socket.IO to that HTTP server
+
+This detail matters because Socket.IO needs the raw HTTP server object, not just the Express app.
+
+#### Static file serving
+
+This line:
+
+```js
+app.use(express.static(path.join(__dirname, 'public')));
 ```
 
-**Important distinction:** `index.js` runs on the **server** (your computer, via Node.js). Everything inside `public/` runs in the **browser** (Chrome, Firefox, etc.). The server's job is to deliver those `public/` files to the browser and manage real-time communication between connected users.
+tells Express to serve the files in the `public/` folder automatically.
 
----
+#### Online user tracking
 
-## How The App Works — A Step-By-Step Walkthrough
+The server stores connected users in an `onlineUsers` object keyed by `socket.id`.
 
-Here is what happens from the moment you start the server to the moment you send a message:
+**Why this matters:** every connection gets a unique ID, so the server can always tell which nickname belongs to which browser connection.
 
-1. **You run `npm run dev`** — Node.js executes `index.js`. Express is created, an HTTP server is set up, Socket.IO is attached, and the server begins listening on port 3000.
+#### Typing indicator behavior
 
-2. **You open `http://localhost:3000` in your browser** — The browser makes a normal HTTP request to the server. Express receives it and responds by sending back `public/index.html`.
+The client sends `typing` and `stop typing` events while the user types. A small timeout prevents those events from being spammed constantly.
 
-3. **The browser renders the page** — The HTML references `style.css` and `/socket.io/socket.io.js`. The browser requests those files and the server serves them from the `public/` folder.
+**Beginner tip:** this is a simple example of "debouncing" behavior. The app waits briefly before deciding that typing has stopped.
 
-4. **The Socket.IO client library loads** — The `/socket.io/socket.io.js` file provides a global function called `io()`.
-
-5. **`io()` is called in `client.js`** — This opens a **socket connection** back to the server. It is a separate channel from the normal page load, designed for real-time events.
-
-6. **The server receives a `connection` event** — In `index.js`, `io.on('connection', ...)` fires. The server logs the connection, assigns the default nickname `'Anonymous'`, and sends a `connection message` event back to this specific browser tab.
-
-7. **The browser prompts for a nickname** — `client.js` uses `prompt()` to ask for a name. Whatever you type (or `Anonymous` if you skip it) is sent to the server via `socket.emit('set nickname', nickname)`.
-
-8. **The server stores the nickname and broadcasts** — The server saves the nickname in its `onlineUsers` object and tells **every** connected browser about the new user with `io.emit('system message', ...)`.
-
-9. **You type a message and press Send** — `client.js` emits `socket.emit('chat message', messageText)` to the server.
-
-10. **The server relays the message to everyone** — The server receives the `chat message` event, packages it as `{ user: nickname, text: messageText }`, and broadcasts it with `io.emit('chat message', ...)`. Every connected browser receives it and appends it to the message list.
-
-**In short:** The server sits in the middle. Every browser sends events to the server, and the server decides which other browsers should receive those events. No browser talks directly to another browser.
-
----
-
-## Key Features In The Code
-
-### Server Setup (`index.js`)
-
-- **Express** creates the web application.
-- **`http.createServer(app)`** wraps Express in a plain HTTP server (required so Socket.IO can attach).
-- **`new Server(server)`** attaches Socket.IO to that HTTP server, enabling real-time communication.
-
-### Static File Serving
-
-- `app.use(express.static(...))` tells Express: *"When the browser requests `/`, `/style.css`, `/client.js`, or `/socket.io/socket.io.js`, look inside the `public/` folder and serve those files."*
-
-### Connection Handling
-
-- `io.on('connection', (socket) => { ... })` runs every time a browser connects.
-- The `socket` object represents **that one browser's connection**. It has a unique `socket.id`.
-
-### Nickname Management
-
-- Each socket starts with `socket.nickname = 'Anonymous'`.
-- When `set nickname` arrives, the server trims the input with `.trim()` and falls back to `'Anonymous'` if the result is empty.
-- A flag `socket.hasJoinedAnnounced` prevents the *"joined the chat"* message from showing again if the user just changes their name later.
-
-### Online User Tracking
-
-- The `onlineUsers` object stores `{ socketId: nickname }` pairs.
-- Every time someone joins, leaves, or changes their name, the server broadcasts the full updated list with `io.emit('online users', Object.values(onlineUsers))`.
-
-### Broadcasting Chat Messages
-
-- On `chat message`, the server checks that the message is not empty, then re-emits it to **everyone** (including the sender) with `io.emit('chat message', { user, text })`.
-
-### Typing and Stop-Typing Events
-
-- `socket.on('typing', ...)` tells every other user that this person is typing, using `socket.broadcast.emit`.
-- `socket.on('stop typing', ...)` tells everyone to clear the typing indicator.
-
-### Disconnect Cleanup
-
-- When a browser tab closes, the `disconnect` event fires.
-- The server removes that user from `onlineUsers`, clears any typing indicator, broadcasts a leave message, and sends the updated users list.
-
----
-
-## Socket 101 — Core Concepts Explained
-
-### What Is a Socket?
-
-A **socket** is a persistent communication channel between a client (your browser) and a server (your Node.js app). Think of it like a phone call instead of a series of text messages:
-
-| Regular HTTP          | Socket (Socket.IO)       |
-|-----------------------|--------------------------|
-| Request → Response    | Open channel, both sides |
-| Page must refresh     | Instant, no refresh      |
-| One conversation ends | Connection stays alive   |
-
-### Glossary
+### Socket.IO Glossary
 
 | Term | Meaning |
 |------|---------|
-| **Event** | A named message, like `'chat message'` or `'typing'`. Events carry data (called a *payload*) between client and server. |
-| **Emit** | To send an event. You *emit* an event with a name and optional data. |
-| **On / Listener** | To wait for and react to an event. You register a listener with `.on(eventName, callback)`. |
-| **Client** | The browser running `client.js`. It connects to the server and emits/listens for events. |
-| **Server** | The Node.js process running `index.js`. It accepts connections and routes events between clients. |
-| **Connection** | The moment a browser opens a socket to the server. Triggers `io.on('connection', ...)`. |
-| **Disconnect** | The moment a browser closes or loses the socket. Triggers `socket.on('disconnect', ...)`. |
-| **Broadcast** | Sending an event to **other** connected clients (not yourself). |
-| **Payload / Data** | The actual information attached to an event — a string, an object, an array, etc. |
+| `event` | A named message such as `chat message` or `typing` |
+| `emit` | To send an event |
+| `on` | To listen for an event |
+| `client` | The browser |
+| `server` | The Node.js process |
+| `socket.id` | The unique ID for one client connection |
+| `broadcast` | Send to everyone except the sender |
+| `payload` | The data attached to an event |
 
-### Three Ways To Emit on the Server
+### Three Useful Server Emit Patterns
 
-| Method | Who Receives It? | Example From This App |
-|--------|-----------------|----------------------|
-| `socket.emit(...)` | Only the **one** browser that owns this socket. | `socket.emit('connection message', 'Connected to the chat server')` — only the newly connected tab sees this. |
-| `io.emit(...)` | **Every** connected browser, including the sender. | `io.emit('chat message', { user, text })` — everyone sees the message. |
-| `socket.broadcast.emit(...)` | Every connected browser **except** the sender. | `socket.broadcast.emit('typing', ...)` — others see you typing, but you don't see it yourself. |
+| Method | Who receives it? | Example |
+|--------|------------------|---------|
+| `socket.emit(...)` | Only one client | Send the connection message to the newly connected browser |
+| `io.emit(...)` | Every connected client | Broadcast chat messages and user list updates |
+| `socket.broadcast.emit(...)` | Everyone except the sender | Show typing indicators to other users only |
 
-### Why Is the Server the Central Hub?
+## Dockerise the App
 
-Browsers never talk to each other directly. Every event goes **client → server → other clients**. This gives the server full control to validate data, track state (like who is online), and decide who should receive what.
+### What Docker Is
 
-### What Is `socket.id`?
+Docker lets you package your app together with the environment it needs to run. Instead of saying, "Please install Node.js and then run these commands," you can package the app into a Docker image and run that image anywhere Docker is installed.
 
-Every connection gets a unique ID string like `"abc123xyz"`. The server uses `socket.id` as a key in the `onlineUsers` object so it knows exactly which nickname belongs to which connection. When that connection drops, the server uses the same `socket.id` to remove the right user.
+### Important Docker Vocabulary
 
----
+| Term | Meaning |
+|------|---------|
+| `Dockerfile` | The recipe Docker reads to build an image |
+| `image` | A built, reusable package of your app and its environment |
+| `container` | A running instance of an image |
+| `Docker Hub` | A cloud registry that stores Docker images |
+| `port mapping` | A bridge from a port on your machine to a port inside the container |
 
-## Socket Events Used In This App
+**What this means:** source code, image, and container are not the same thing.
 
-Here is a quick reference of every event name used, where it is emitted, and where it is listened for:
+- Source code is the files in this repository
+- An image is a packaged snapshot built from that code
+- A container is a running process created from the image
 
-| Event | Emitted By | Listened For By | Payload |
-|-------|-----------|----------------|---------|
-| `connection` | Socket.IO (automatic) | Server (`index.js`) | — |
-| `connection message` | Server | Client (`client.js`) | String — `"Connected to the chat server"` |
-| `set nickname` | Client | Server | String — the chosen nickname |
-| `chat message` | Client **and** Server | Client **and** Server | Object — `{ user, text }` |
-| `typing` | Client | Server (then rebroadcast) | — |
-| `stop typing` | Client | Server (then rebroadcast) | — |
-| `system message` | Server | Client | String — e.g. `"Alice joined the chat"` |
-| `online users` | Server | Client | Array of strings — `["Alice", "Bob"]` |
-| `disconnect` | Socket.IO (automatic) | Server | — |
+### Why This App Is a Good First Docker Example
 
----
+This app is a single Node.js service with no database. That keeps the Docker setup simple because we only need one container.
 
-## Code Concepts Beginners Should Notice
+### The Current Dockerfile
 
-- **Why `.trim()` is used** — Users might accidentally type spaces only. `.trim()` removes leading and trailing whitespace so `"  "` becomes `""`, which the app then treats as empty and ignores.
+This repository already contains the following `Dockerfile`:
 
-- **Why empty messages are ignored** — `if (messageText === '') return;` prevents blank messages from cluttering the chat. There is no point in broadcasting nothing.
+```dockerfile
+FROM node:19-alpine
+WORKDIR /app
+COPY . .
+EXPOSE 3000
+RUN npm install
+CMD ["npm", "start"]
+```
 
-- **Why `preventDefault()` is used on the form** — By default, submitting an HTML form causes the browser to reload the page. `e.preventDefault()` stops that so the chat stays live.
+### Dockerfile Explained Line by Line
 
-- **Why the typing timeout exists** — The `input` event fires on **every keystroke**. Without a timeout, the server would receive dozens of `typing` events per second. The 1-second debounce means the *"is typing..."* message only shows while typing is active, and clears automatically when the user pauses.
+#### `FROM node:19-alpine`
 
-- **Why the app rebuilds the online users list from scratch** — `usersList.innerHTML = ''` clears the entire sidebar list before re-adding every user. This keeps the code simple and guarantees the list is never out of sync with the server's data.
+This chooses the base image. In plain English, it means: "Start from a small Linux image that already has Node.js 19 installed."
 
-- **Why the server stores nicknames in an object keyed by `socket.id`** — Using `socket.id` as the key ensures each connection has exactly one entry. It also makes cleanup trivial: `delete onlineUsers[socket.id]` removes the right user on disconnect.
+#### `WORKDIR /app`
 
----
+This sets the working folder inside the container to `/app`.
+
+**What this means:** all following Docker instructions run from inside that folder.
+
+#### `COPY . .`
+
+This copies the current project into the container's working directory.
+
+**Common mistake:** beginners often think Docker reads files directly from the host machine after the container starts. It does not. The files are copied into the image at build time.
+
+#### `EXPOSE 3000`
+
+This documents that the app inside the container listens on port `3000`.
+
+**Why this matters:** the app code still runs on port `3000` inside the container, even if you choose a different port on your own machine.
+
+#### `RUN npm install`
+
+This installs project dependencies inside the image while the image is being built.
+
+#### `CMD ["npm", "start"]`
+
+This is the default command that runs when the container starts.
+
+### Why `.dockerignore` Exists
+
+The repository also includes `.dockerignore`. This tells Docker which files and folders to skip when building the image.
+
+The most important entry is `node_modules`.
+
+**Why this matters:** you do not want to copy your local `node_modules` into the image. Docker should install a fresh set of dependencies inside the container so the image stays clean and consistent.
+
+## Build, Run, and Share the Docker Image
+
+### Step 1: Build the image
+
+Run this from the project root:
+
+```powershell
+docker build -t organisedtoast/socket-chat-app .
+```
+
+**What this means:**
+
+- `docker build` tells Docker to build an image
+- `-t organisedtoast/socket-chat-app` gives the image a name
+- `.` tells Docker to use the current folder as the build context
+
+**Common mistake:** do not type a leading `$` in PowerShell. In tutorials, `$` usually means "this is a terminal prompt", not "type this character".
+
+### Step 2: Check that the image exists
+
+Run:
+
+```powershell
+docker images
+```
+
+You should see `organisedtoast/socket-chat-app` listed.
+
+### Step 3: Run the image as a container
+
+Run:
+
+```powershell
+docker run -d -p 7000:3000 organisedtoast/socket-chat-app
+```
+
+This starts a container in the background.
+
+**What this means:**
+
+- `-d` means detached mode, so the container runs in the background
+- `-p 7000:3000` maps port `7000` on your computer to port `3000` inside the container
+
+### Host Port vs Container Port
+
+This is one of the most important beginner concepts in Docker:
+
+- The app listens on `3000` inside the container
+- You choose what port to expose on your own machine
+- In this command, your browser uses `7000`, and Docker forwards that traffic to `3000` inside the container
+
+So after running the container, open:
+
+```text
+http://localhost:7000
+```
+
+### Step 4: Check the running container
+
+Run:
+
+```powershell
+docker ps
+```
+
+This shows running containers, including:
+
+- the container ID
+- the image name
+- the port mapping
+- the generated container name
+
+### Step 5: Push the image to Docker Hub
+
+If you want other people to run your image from Docker Hub, log in and push it:
+
+```powershell
+docker login
+docker push organisedtoast/socket-chat-app:latest
+```
+
+**Why this matters:** once the image is on Docker Hub, another person does not need your source code, Node.js, or `npm install`. They only need Docker.
+
+### Step 6: Pull and run the public image elsewhere
+
+Someone else can run your app with:
+
+```powershell
+docker pull organisedtoast/socket-chat-app:latest
+docker run -d -p 7000:3000 organisedtoast/socket-chat-app:latest
+```
+
+Then they open:
+
+```text
+http://localhost:7000
+```
+
+**Big idea:** Docker turns "here is my code, please set everything up" into "here is my image, just run it".
+
+## Automate Docker Hub Updates with GitHub Actions
+
+### What GitHub Actions Is
+
+GitHub Actions is GitHub's built-in automation system. It lets a repository react automatically to events such as pushes, pull requests, or releases.
+
+In this project, GitHub Actions is used to automate the Docker workflow you already learned manually.
+
+### What CI/CD Means in Beginner Language
+
+CI/CD stands for Continuous Integration and Continuous Deployment or Continuous Delivery.
+
+For this repository, the simplest beginner-friendly meaning is:
+
+- CI: GitHub automatically checks and builds your project after code changes
+- CD: GitHub automatically publishes the updated Docker image to Docker Hub
+
+**Why this matters:** instead of manually running `docker build` and `docker push` every time you change the app, GitHub can do that for you after a push to `main`.
+
+### The Workflow File
+
+This repository uses:
+
+```text
+.github/workflows/cicd.yml
+```
+
+Current contents:
+
+```yaml
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [19.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: ./
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/socket-chat-app:latest
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+```
+
+### Step-by-Step Workflow Explanation
+
+#### `name: CI/CD`
+
+This is just the display name of the workflow in GitHub.
+
+#### `on: push: branches: [ main ]`
+
+This tells GitHub when to run the workflow.
+
+**What this means:** every time code is pushed to the `main` branch, GitHub starts this workflow automatically.
+
+#### `jobs: build`
+
+A workflow is made of jobs. This project currently has one job called `build`.
+
+#### `runs-on: ubuntu-latest`
+
+GitHub creates a temporary Linux machine to run the workflow.
+
+**Beginner tip:** this machine is called a runner. It exists only for the workflow run, then disappears.
+
+#### `strategy` and `matrix`
+
+This tells the workflow which Node.js version to use. Here, it uses `19.x`.
+
+#### `actions/checkout@v3`
+
+This downloads your repository code into the GitHub runner.
+
+**Why this matters:** the runner cannot build your project until it actually has the project files.
+
+#### `actions/setup-node@v3`
+
+This installs the required Node.js version on the runner.
+
+#### `run: npm install`
+
+This installs project dependencies during the workflow.
+
+**Important note:** this workflow does not run a real test suite yet. The project's current `test` script is just the default placeholder, so this pipeline is mainly a build-and-publish pipeline rather than a full automated test pipeline.
+
+#### `docker/login-action@v2`
+
+This logs in to Docker Hub using GitHub repository secrets.
+
+**Why this matters:** secrets keep your credentials out of the workflow file. Hardcoding usernames or tokens in YAML would be unsafe.
+
+#### `docker/setup-buildx-action@v2`
+
+This prepares Docker's advanced build tool inside the runner.
+
+#### `docker/build-push-action@v4`
+
+This is the most important deployment step. It:
+
+- reads the `Dockerfile`
+- builds the Docker image
+- pushes the image to Docker Hub
+
+The pushed tag is:
+
+```text
+organisedtoast/socket-chat-app:latest
+```
+
+because the workflow uses the Docker Hub username stored in `DOCKER_HUB_USERNAME`.
+
+#### `Image digest`
+
+This prints the resulting image digest to the workflow logs.
+
+**What this means:** GitHub shows a unique identifier for the built image, which is helpful proof that the build completed successfully.
+
+### Repository Secrets You Need
+
+To make this workflow work in GitHub, the repository needs these secrets:
+
+- `DOCKER_HUB_USERNAME`
+- `DOCKER_HUB_ACCESS_TOKEN`
+
+### How to Add the Secrets in GitHub
+
+1. Open the repository on GitHub
+2. Go to `Settings`
+3. Open `Secrets and variables`
+4. Open `Actions`
+5. Click `New repository secret`
+6. Add `DOCKER_HUB_USERNAME` with your Docker Hub username as the value
+7. Add `DOCKER_HUB_ACCESS_TOKEN` with a Docker Hub access token as the value
+
+### How to Create the Docker Hub Access Token
+
+1. Log in to Docker Hub
+2. Open `Account Settings`
+3. Open `Security`
+4. Create a new access token
+5. Give it the permissions needed to push images
+
+### What Happens After a Push to `main`
+
+Once the secrets are in place, the workflow becomes automatic:
+
+1. You make a change to the app
+2. You commit the change
+3. You push the commit to `main`
+4. GitHub Actions starts the workflow
+5. GitHub builds the Docker image from the repository
+6. GitHub pushes the updated image to Docker Hub
+7. Anyone who pulls `organisedtoast/socket-chat-app:latest` gets the updated version
+
+### How to Check the Workflow Run
+
+1. Open the repository on GitHub
+2. Click the `Actions` tab
+3. Open the latest `CI/CD` run
+4. Click through each step to see the logs
+
+**Common mistake:** if nothing happens after a push, check whether the push actually went to `main`. This workflow only triggers on pushes to that branch.
 
 ## Troubleshooting
 
-| Problem | What To Check |
-|---------|--------------|
-| **`npm install` was not run** | If you see `Cannot find module 'express'`, you need to run `npm install` first to download the dependencies. |
-| **Port 3000 already in use** | If you get `EADDRINUSE`, another program is using port 3000. Close that program, or change `3000` to another number in `index.js` and in your browser URL. |
-| **Browser page loads but no live updates** | Make sure the server is still running in your terminal. If you stopped it, restart with `npm run dev` or `npm start`. |
-| **Chat only works with one tab** | You need **at least two browser tabs** open to test real-time messaging. The app works with one tab, but you will not see messages appear "live" because there is no other tab to receive them. |
-| **Typing indicator not showing** | The typing indicator only appears for **other** users. You need a second tab connected with a different nickname to see it. |
-| **Nickname falls back to `Anonymous`** | If you press Enter on the prompt without typing anything (or type only spaces), the app defaults to `Anonymous`. This is intentional. Reload the page to try again. |
+### Local Node.js issues
 
----
+| Problem | What to check |
+|---------|---------------|
+| `Cannot find module 'express'` | Run `npm install` in the project root |
+| `EADDRINUSE` on port `3000` | Another app is already using port `3000` |
+| The browser loads but live updates do not work | Make sure the Node.js server is still running |
+| The typing indicator does not appear | Open a second tab; typing indicators are shown to other users, not to yourself |
 
-## Current Limitations
+### Docker issues
 
-This app is a **learning tool**, not a production chat product. It intentionally skips many features:
+| Problem | What to check |
+|---------|---------------|
+| `The term '$' is not recognized` in PowerShell | Remove the leading `$` from copied commands |
+| `The '<' operator is reserved for future use` | Replace placeholder text like `<your-dockerhub-username>` with your real username |
+| `ENOENT: no such file or directory, open '/app/package.json'` during build | Make sure you ran `docker build` from the project root where `package.json` exists |
+| Docker commands fail to connect | Make sure Docker Desktop is installed and running |
+| Port `7000` does not open the app | Confirm the container is running with `docker ps` |
 
-- **No database or saved message history** — messages exist only in the browser's memory. Refresh the page and they are gone.
-- **No authentication** — anyone who knows the URL can join.
-- **No private rooms** — everyone is in one global chat.
-- **No duplicate-name protection** — two people can both be called `"Alice"`.
-- **No timestamps** — messages do not show when they were sent.
-- **Data resets on server restart** — the `onlineUsers` object is stored in memory, so restarting the server clears all nicknames and forces everyone to reconnect.
+### GitHub Actions issues
 
----
+| Problem | What to check |
+|---------|---------------|
+| Workflow does not start | Make sure you pushed to `main` |
+| Docker login fails in GitHub Actions | Check that `DOCKER_HUB_USERNAME` and `DOCKER_HUB_ACCESS_TOKEN` exist and are spelled correctly |
+| YAML errors appear in GitHub Actions | YAML indentation must be exact |
+| Docker Hub image does not update | Check the `Build and push` step in the Actions logs |
 
 ## Next Learning Steps
 
-Once you understand how this app works, try extending it on your own:
+Once you are comfortable with the current setup, here are some strong next steps:
 
-- **Add timestamps** — include `new Date().toLocaleTimeString()` in the chat message object and display it on the client.
-- **Add message history** — store messages in an array on the server and send them to newly connected users.
-- **Add chat rooms** — use Socket.IO's `socket.join(roomName)` to let users pick separate channels.
-- **Add duplicate nickname checks** — reject or warn when someone picks a name already in use.
-- **Show user counts in join/leave messages** — include the total number of connected users in system messages.
-- **Add simple validation or a profanity filter** — screen messages before broadcasting them.
+- Add a real automated test suite so GitHub Actions can test before publishing
+- Add version tags such as `v1`, `v1.1`, or commit-based tags instead of relying only on `latest`
+- Learn Docker Compose for multi-container apps that also need a database
+- Add timestamps to chat messages
+- Add chat rooms
+- Add duplicate nickname protection
+- Add saved message history with a database
 
+## Final Summary
 
+This repository now teaches three connected ideas in one place:
+
+1. How real-time communication works with Socket.IO
+2. How Docker packages a Node.js app into a portable image
+3. How GitHub Actions automates Docker image publishing
+
+If you can run the app locally, build the Docker image, run the container on `http://localhost:7000`, and understand why a push to `main` updates `organisedtoast/socket-chat-app:latest`, then you have covered the core beginner workflow from development to basic CI/CD.
