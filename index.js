@@ -24,7 +24,12 @@ const onlineUsers = {};
  
 // 4. Serve your public/ folder automatically
 app.use(express.static(path.join(__dirname, 'public')));
- 
+
+// 4b. For testing purposes, you can also have a simple route to confirm the server is running.
+app.get('/', (req, res) => {
+  res.send('Chat server is running');
+});
+
 // 5. Listen for new socket connections
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
@@ -97,7 +102,9 @@ io.on('connection', (socket) => {
 });
  
 // 6. Start the server
-server.listen(3000, () => {
-  console.log('Listening on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+server.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
 });
 
